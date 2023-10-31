@@ -45,11 +45,14 @@ time.sleep(5)
 # Acha o botão que abre as informações do fundo, fazendo uma iteração em cada um
 details_buttons = browser.find_elements(By.CLASS_NAME, 'funds-table-row')
 
+cnpjs = []
+classificacoes_xp = []
+classificacoes_cvm = []
+
 for button in details_buttons:
     browser.execute_script('arguments[0].scrollIntoView(true);', button)
     browser.execute_script('arguments[0].click();', button)
-
-    time.sleep(0.1)
+    time.sleep(4.5)
 
     cnpj_element = wait.until(
         EC.presence_of_element_located(
@@ -73,19 +76,18 @@ for button in details_buttons:
         )
     )
 
-    cnpj = cnpj_element.text
-    print(cnpj)
-    classificacao_xp = classificacao_xp_element.text
-    print(classificacao_xp)
-    classificacao_cvm = classificacao_cvm_element.text
-    print(classificacao_cvm)
-
+    cnpjs.append(cnpj_element.text)
+    print(len(cnpjs))
+    classificacoes_xp.append(classificacao_xp_element.text)
+    print(len(classificacoes_xp))
+    classificacoes_cvm.append(classificacao_cvm_element.text)
+    print(len(classificacoes_cvm))
 
 # Aqui é basicamente a mesma repetição para cada varíavel, procurando todos os elementos dela
 # Isso se repete para todas as variáveis de interesse abaixo.
 nomes = [
     nome.text for nome in browser.find_elements(By.CLASS_NAME, 'fund-name')
-]
+][1:]
 print(len(nomes))
 
 aplicacoes_minimas = [
@@ -93,40 +95,50 @@ aplicacoes_minimas = [
     for aplicacao in browser.find_elements(
         By.CLASS_NAME, 'minimal-initial-investment'
     )
-]
-print(len(aplicacoes_minimas))
+][1:]
+#print(len(aplicacoes_minimas))
 
 taxa_adms = [
     taxa.text
     for taxa in browser.find_elements(By.CLASS_NAME, 'administration-rate')
-]
-print(len(taxa_adms))
+][1:]
+#print(len(taxa_adms))
 
 cotizacoes_resgate = [
     cotizacao.text
     for cotizacao in browser.find_elements(
         By.CLASS_NAME, 'redemption-quotation'
     )
-]
-print(len(cotizacoes_resgate))
+][1:]
+#print(len(cotizacoes_resgate))
 
 liquidacoes_resgate = [
     liquidacao.text
     for liquidacao in browser.find_elements(
         By.CLASS_NAME, 'redemption-settlement'
     )
-]
-print(len(liquidacoes_resgate))
+][1:]
+#print(len(liquidacoes_resgate))
 
-riscos = [risco.text for risco in browser.find_elements(By.CLASS_NAME, 'risk')]
-print(len(riscos))
+riscos = [risco.text for risco in browser.find_elements(By.CLASS_NAME, 'risk')][1:]
+#print(len(riscos))
 
-rentabilidades = [
-    rentabilidade.text
-    for rentabilidade in browser.find_elements(By.CLASS_NAME, 'profitability')
-]
-print(len(rentabilidades))
+rentabilidades_mensal = []
+rentabilidades_anual = []
+rentabilidades_12m = []
+rentabilidades_24m = []
+rentabilidades_36m = []
 
+elements = browser.find_elements(By.CLASS_NAME, 'profitability')[1:]
+
+for element in elements:
+    rentabilidades = element.text.split('\n')
+
+    rentabilidades_mensal.append(rentabilidades[0])
+    rentabilidades_anual.append(rentabilidades[1])
+    rentabilidades_12m.append(rentabilidades[2])
+    rentabilidades_24m.append(rentabilidades[3])
+    rentabilidades_36m.append(rentabilidades[4])
 # aqui está o dicionário de dados para receber todas essas informações
 
 dados = {
@@ -136,12 +148,19 @@ dados = {
     'cotizacao_resgate': cotizacoes_resgate,
     'liquidacao_resgate': liquidacoes_resgate,
     'risco': riscos,
-    'rentabilidade': rentabilidades,
+    'rentabilidade_mensal': rentabilidades_mensal,
+    'rentabilidade_anual': rentabilidades_anual,
+    'rentabilidade_12m': rentabilidades_12m,
+    'rentabilidade_24m': rentabilidades_24m,
+    'rentabilidade_36m': rentabilidades_36m,
+    'cnpj': cnpjs,
+    'classificacao_xp': classificacoes_xp,
+    'classificacao_cvm': classificacoes_cvm
 }
 
 # E aqui, transformei o dicionário em um DataFrame do pandas e passei para o formato de Excel
 df = pd.DataFrame(dados)
-df.to_excel('teste.xlsx', index=False)
+df.to_excel('resultado.xlsx', sheet_name='scrapping_result', index=False)
 
 #Só deixei isso aqui pra poder manter o browser aberto e ir verificando se o código estava funcionando
 #Disclaimer: confesso que é um pouco gambiarra, mas, o browser sem isso estava abrindo e fechando em segundos
